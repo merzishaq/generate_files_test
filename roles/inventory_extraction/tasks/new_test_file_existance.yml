@@ -22,3 +22,16 @@
   changed_when: false
   no_log: false
   register: certificates_date_output
+
+- name: Extract and format expiration date
+  set_fact:
+    cert_expiration: >-
+      {{
+        cert_expiration | default({}) | combine({
+          item.item: (item.stdout | regex_replace('notAfter=', '') | trim)
+        })
+      }}
+  loop: "{{ certificates_date_output.results }}"
+  when:
+    - "'vip_server' in group_names"
+    - item.stdout is defined
