@@ -1,0 +1,24 @@
+- name: Check if certificate files exist
+  stat:
+    path: /etc/ssl/{{ folder_value }}/{{ item }}.pem
+  loop:
+    - "{{ groups['vip_server'] }}"
+    - "{{ groups['scm_server'] }}"
+    - "{{ groups['scm_server_standby'] }}"
+    - "{{ groups['db_server'] }}"
+    - "{{ groups['master_servers'] }}"
+    - "{{ groups['worker_servers'] }}"
+    - "{{ groups['kafka_servers'] }}"
+    - "{{ groups['arbiter_server'] }}"
+  when: "'vip_server' in group_names"
+  register: cert_files
+
+- name: Check Certificates expiration date
+  command: openssl x509 -in /etc/ssl/{{ folder_value }}/{{ item.item }}.pem -noout -enddate
+  loop: "{{ cert_files.results }}"
+  when:
+    - "'vip_server' in group_names"
+    - item.stat.exists
+  changed_when: false
+  no_log: false
+  register: certificates_date_output
