@@ -1,0 +1,13 @@
+---
+- name: Generate CSV and TXT files from inventory and send via email
+  hosts: localhost
+  gather_facts: no
+
+  roles:
+    - generate_files
+
+  vars_files:
+    - vars/main.yml
+
+  tags:
+    - inventory_report

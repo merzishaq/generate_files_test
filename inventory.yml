@@ -1,0 +1,21 @@
+[masters]
+hadoop.cdp.master ansible_host=124.0.24.24
+
+[slaves]
+hadoop.cdp.slave1 ansible_host=124.0.24.25
+hadoop.cdp.slave2 ansible_host=124.0.24.26
+
+[edge]
+hadoop.cdp.edge ansible_host=124.0.24.124
+
+[database_servers]
+hadoop.cdp.db ansible_host=124.0.24.125
+
+[cloudera_manager_server]
+hadoop.cdp.cm ansible_host=124.0.24.126
+
+[all_servers:children]
+masters
+slaves
+edge
+cloudera_manager_server

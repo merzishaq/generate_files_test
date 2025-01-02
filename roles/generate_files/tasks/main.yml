@@ -1,0 +1,44 @@
+- name: Extract inventory details into a variable
+  set_fact:
+    inventory_data: |
+      {% for host in groups['all'] %}
+      {{ hostvars[host]['ansible_host'] }},{{ host }}
+      {% endfor %}
+
+- name: Generate CSV file
+  copy:
+    dest: "{{ csv_file_path }}"
+    content: |
+      IP,Hostname
+      {% for host in groups['all'] %}
+      {{ hostvars[host]['ansible_host'] }},{{ host }}
+      {% endfor %}
+
+- name: Generate TXT file
+  copy:
+    dest: "{{ txt_file_path }}"
+    content: |
+      Inventory Details:
+      {% for host in groups['all'] %}
+      Hostname: {{ host }}, IP: {{ hostvars[host]['ansible_host'] }}
+      {% endfor %}
+
+- name: Send inventory files via email
+  mail:
+    host: "{{ smtp_server }}"
+    port: "{{ smtp_port }}"
+    from: "{{ mail_from }}"
+    to: "{{ mail_to }}"
+    subject: "Ansible Inventory Report {{ file_timestamp }}"
+    body: "Attached are the CSV and TXT files containing inventory details."
+    attach:
+      - "{{ csv_file_path }}"
+      - "{{ txt_file_path }}"
+
+- name: Cleanup generated files
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ csv_file_path }}"
+    - "{{ txt_file_path }}"
