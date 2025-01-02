@@ -1,0 +1,34 @@
+---
+- name: Check Certificates expiration date for specific groups
+  hosts: all
+  gather_facts: no
+
+  vars:
+    target_groups:
+      - vip_server
+      - scm_server
+      - scm_server_standby
+      - db_server
+      - master_servers
+      - worker_servers
+      - kafka_servers
+      - arbiter_server
+
+  tasks:
+    - name: Retrieve SSL Certificate Expiration Date for Each Group
+      command: openssl x509 -in /etc/ssl/{{ folder_value }}/{{ item }}.pem -noout -enddate
+      loop: "{{ target_groups }}"
+      loop_control:
+        loop_var: item
+      when: item in group_names
+      changed_when: false
+      no_log: false
+      register: certificates_date_output
+
+    - name: Extract and format expiration dates
+      set_fact:
+        cert_expiration: "{{ item.stdout | regex_replace('notAfter=', '') }}"
+      loop: "{{ certificates_date_output.results }}"
+      loop_control:
+        loop_var: item
+      when: item is defined
