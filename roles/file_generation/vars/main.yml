@@ -2,6 +2,8 @@ mail_to: "admin@example.com"
 mail_from: "ansible@example.com"
 file_timestamp: "{{ lookup('pipe', 'date +%Y%m%d_%H%M%S') }}"
 csv_file_path: "/tmp/inventory_{{ file_timestamp }}.csv"
+# vars/main.yml
+inventory_name: "{{ ansible_inventory_sources[0] | basename | lower | regex_replace('[^a-z0-9_]', '_') }}"
 txt_file_path: "/tmp/inventory_{{ file_timestamp }}.txt"
 smtp_server: "smtp.example.com"
 smtp_port: 587
