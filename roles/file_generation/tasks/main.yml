@@ -1,0 +1,60 @@
+---
+- name: Retrieve SSL certificate expiration date
+  command: >
+    echo -e "notAfter= test1 00000-00000-00000\n\
+    notAfter= test2 11111-11111-11111\n\
+    notAfter= test3 22222-22222-22222\n\
+    notAfter= test4 33333-33333-33333\n\
+    notAfter= test5 44444-44444-44444"
+  changed_when: false
+  no_log: false
+  register: certificates_date_output
+
+- name: Extract and format expiration date
+  set_fact:
+    cert_expiration: "{{ certificates_date_output.stdout | regex_replace('^notAfter=\\s*', '') }}"
+
+- name: Display SSL certificate expiration date
+  debug:
+    msg: "Host: {{ inventory_hostname }}, Expiration: {{ cert_expiration }}"
+
+- name: Add certificate info to reports
+  set_fact:
+    cert_reports: >-
+      {{ cert_reports | default([]) + [{'host': inventory_hostname, 'expiration': cert_expiration}] }}
+
+- name: Generate CSV report content (run_once)
+  run_once: true
+  block:
+    - name: Create timestamped file names
+      set_fact:
+        file_timestamp: "{{ lookup('pipe', 'date +%Y%m%d_%H%M%S') }}"
+        csv_file_path: "/tmp/inventory_{{ file_timestamp }}.csv"
+
+    - name: Create CSV header and append data
+      copy:
+        dest: "{{ csv_file_path }}"
+        content: "Machine,Expiration Date\n"
+        mode: '0644'
+        force: no
+
+    - name: Append certificate data to CSV
+      lineinfile:
+        path: "{{ csv_file_path }}"
+        line: "{{ item.host }},{{ item.expiration }}"
+        create: yes
+      loop: "{{ cert_reports }}"
+      delegate_to: localhost
+
+- name: Send email with CSV attachment
+  mail:
+    host: "{{ smtp_server }}"
+    port: "{{ smtp_port }}"
+    from: "{{ mail_from }}"
+    to: "{{ mail_to }}"
+    subject: "SSL Certificate Expiration Report"
+    body: "Please find attached the SSL Certificate Expiration Report in CSV format."
+    attach:
+      - "{{ csv_file_path }}"
+  delegate_to: localhost
+

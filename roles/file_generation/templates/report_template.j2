@@ -1,0 +1,6 @@
+Certificates Report:
+
+{% for item in cert_reports %}
+- Machine: {{ item.host }}
+  Expiration Date: {{ item.expiration }}
+{% endfor %}

@@ -4,7 +4,8 @@
   gather_facts: no
 
   roles:
-    - generate_files
+    - file_generation
+#    - generate_files
 
   vars_files:
     - vars/main.yml
