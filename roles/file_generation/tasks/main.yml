@@ -58,3 +58,32 @@
       - "{{ csv_file_path }}"
   delegate_to: localhost
 
+---
+- name: Check SSL Certificate Expiration on Edge Servers
+  hosts: edge_servers
+  gather_facts: no
+
+  tasks:
+    - name: Check if SSL certificate file exists
+      stat:
+        path: /var/lib/cloudera-scm-agent/agent-cert/cm-auto-host_cert_chain.pem
+      register: cert_file
+
+    - name: Retrieve SSL Certificate Expiration Date
+      command: >
+        openssl x509 -in /var/lib/cloudera-scm-agent/agent-cert/cm-auto-host_cert_chain.pem
+        -noout -enddate
+      register: certificate_raw_output
+      changed_when: false
+      no_log: true
+      when: cert_file.stat.exists
+
+    - name: Parse Certificate Expiration Date
+      set_fact:
+        cert_expiration: "{{ certificate_raw_output.stdout | regex_replace('notAfter=', '') }}"
+      when: cert_file.stat.exists
+
+    - name: Display Certificate Expiration Date
+      debug:
+        msg: "The certificate expiration date is: {{ cert_expiration }}"
+      when: cert_file.stat.exists
