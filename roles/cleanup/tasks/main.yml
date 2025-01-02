@@ -1,0 +1,10 @@
+- name: Check if CSV file exists
+  stat:
+    path: /path/to/your/file.csv
+  register: csv_file_stat
+
+- name: Delete CSV file if it exists
+  file:
+    path: /path/to/your/file.csv
+    state: absent
+  when: csv_file_stat.stat.exists
