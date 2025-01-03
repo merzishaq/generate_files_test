@@ -42,3 +42,12 @@
       }}
   with_items: "{{ certificates_date_output.results }}"
   when: "'vip_server' in group_names"
+
+
+
+- name: Sort certificate file by expiration date and remove duplicates
+  command: >
+    sort -k3,3M -k4,4n -k5,5 /path/to/certificates_info.txt | uniq > /path/to/certificates_info_sorted.txt
+  args:
+    creates: /path/to/certificates_info_sorted.txt
+  become: true
