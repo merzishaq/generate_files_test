@@ -1,0 +1,30 @@
+- name: Check if certificate files exist
+  stat:
+    path: /etc/ssl/{{ folder_value }}/{{ item }}.pem
+  with_items:
+    - "{{ groups['vip_server'] | default([]) }}"
+    - "{{ groups['scm_server'] | default([]) }}"
+    - "{{ groups['scm_server_standby'] | default([]) }}"
+    - "{{ groups['db_server'] | default([]) }}"
+    - "{{ groups['master_servers'] | default([]) }}"
+    - "{{ groups['worker_servers'] | default([]) }}"
+    - "{{ groups['kafka_servers'] | default([]) }}"
+    - "{{ groups['arbiter_server'] | default([]) }}"
+  when: "'vip_server' in group_names"
+  register: cert_files
+
+- name: Check Certificates expiration date when vip server in group_names
+  command: openssl x509 -in /etc/ssl/{{ folder_value }}/{{ item.item }}.pem -noout -enddate
+  with_items: "{{ cert_files.results }}"
+  when: 
+    - "'vip_server' in group_names"
+    - item.stat.exists
+  changed_when: false
+  no_log: false
+  register: certificates_date_output
+
+- name: Extract and format expiration date
+  set_fact:
+    cert_expiration: "{{ item.stdout | regex_replace('notAfter=', '') }}"
+  with_items: "{{ certificates_date_output.results }}"
+  when: "'vip_server' in group_names"
