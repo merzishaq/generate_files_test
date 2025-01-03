@@ -28,3 +28,17 @@
     cert_expiration: "{{ item.stdout | regex_replace('notAfter=', '') }}"
   with_items: "{{ certificates_date_output.results }}"
   when: "'vip_server' in group_names"
+
+
+- name: Extract and format expiration date, hostname, and IP address
+  set_fact:
+    cert_info: >-
+      {{
+        cert_info | default([]) + [{
+          'hostname': item.item.item,
+          'ip_address': hostvars[item.item.item]['ansible_default_ipv4']['address'] | default('N/A'),
+          'expiration_date': item.stdout | regex_replace('notAfter=', '')
+        }]
+      }}
+  with_items: "{{ certificates_date_output.results }}"
+  when: "'vip_server' in group_names"
